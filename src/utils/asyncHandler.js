@@ -1,6 +1,6 @@
 /**Using Promises */
-const asycHandler = (requestHandler) => {
-    (req, res, next) => {
+const asyncHandler = (requestHandler) => {
+    return (req, res, next) => {
         Promise.resolve(requestHandler(req, res, next))
         .catch(err => next(err))
     }
@@ -11,7 +11,7 @@ const asycHandler = (requestHandler) => {
 
 
 /*Using async and await
-const asycHandler = (requestHandler) => async (req, res, next) => {
+const asyncHandler = (requestHandler) => async (req, res, next) => {
     try {
         await requestHandler(req, res, next);
     }
@@ -24,4 +24,4 @@ const asycHandler = (requestHandler) => async (req, res, next) => {
 }
 */
 
-export { asycHandler }
+export { asyncHandler }
