@@ -1,15 +1,30 @@
-import { ApiError } from "../utils/apiError.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { User } from "../models/user.model.js"
-import { uploadToCloudinary } from "../utils/FileUpload/Cloudinary.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
+import {
+    ApiError
+} from "../utils/apiError.js";
+import {
+    asyncHandler
+} from "../utils/asyncHandler.js";
+import {
+    User
+} from "../models/user.model.js"
+import {
+    uploadToCloudinary
+} from "../utils/FileUpload/Cloudinary.js";
+import {
+    ApiResponse
+} from "../utils/ApiResponse.js";
 
-const registerUser = asyncHandler(async(req, res) => {
-    const { fullName, username, email, password } = req.body; 
+const registerUser = asyncHandler(async (req, res) => {
+    const {
+        fullName,
+        username,
+        email,
+        password
+    } = req.body;
 
     //Validation Error if any
     if (
-        [fullName, username, email, password].some(field => 
+        [fullName, username, email, password].some(field =>
             field.trim() === "")
     ) {
         throw new ApiError(400, "Mandatory Fields required")
@@ -22,7 +37,11 @@ const registerUser = asyncHandler(async(req, res) => {
 
     //Check if user exists
     const is_exists = await User.findOne({
-        $or: [{username}, {email}]
+        $or: [{
+            username
+        }, {
+            email
+        }]
     })
 
     if (is_exists) {
@@ -31,7 +50,12 @@ const registerUser = asyncHandler(async(req, res) => {
 
     //Get Avatar and cover images path
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+
+    if (req.files && Array.isArray(req.files.coverImage) &&
+        req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "User Avatar is required")
@@ -39,7 +63,7 @@ const registerUser = asyncHandler(async(req, res) => {
 
     //Upload to cloudinary
     const avatar_response = await uploadToCloudinary(avatarLocalPath);
-    const cover_image_response = null;
+    let cover_image_response = null;
     if (coverImageLocalPath) {
         cover_image_response = await uploadToCloudinary(coverImageLocalPath)
     }
@@ -67,10 +91,12 @@ const registerUser = asyncHandler(async(req, res) => {
     const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     )
-    
+
     return res.status(201).json(
         new ApiResponse(200, createdUser, "User Created Succesfully")
     )
 })
 
-export { registerUser }
+export {
+    registerUser
+}
