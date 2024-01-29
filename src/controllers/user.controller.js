@@ -97,6 +97,71 @@ const registerUser = asyncHandler(async (req, res) => {
     )
 })
 
+
+const loginUser = asyncHandler(async (req, res) => {
+    const { email, username, password } = req.body;
+    //Throw error if not present
+    if (!email || !username) {
+        throw new ApiError(400, "Username or email is required")
+    }
+    
+    //Find the user
+    const user = await User.findOne({
+        $or: [{username}, {email}]
+    })
+
+    if (!user) {
+        throw new ApiError(404, "User not exists")
+    }
+
+    //Validate the password
+    const isPasswordCorrect = await user.isPasswordCorrect(password)
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid user credentials")
+    }
+
+    //Generate Access and refresh tokens
+    const { accessToken, refreshToken }= await generateAccessAndRefreshTokens(user._id);
+
+    //Logged In user info for response(without refreshToken and password)
+    const loggedInUser = await User.findById(user._id)
+    .select(
+        "-refreshToken -password"
+    )
+
+    //Make cookie secured
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res.status(200).cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options).json(
+        new ApiError(
+            200, 
+            { user: loggedInUser, accessToken, refreshToken },
+            "User Loggedin Successfully"
+        )
+    )
+})
+
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        //Find the user
+        const userDetails = await User.findById(userId);
+        const accessToken = await userDetails.generateAccessToken();
+        const refreshToken = await userDetails.generateRefreshToken();
+
+        //DB Save: refreshToken to User
+        userDetails.refreshToken = refreshToken;
+        userDetails.save({validateBeforeSave: false}); //Explicit false to bypass validation checks
+
+        return { accessToken, refreshToken }
+    } catch (error) {
+        throw new ApiError(500, "Error while generating access and refresh tokens")
+    }
+}
+
 export {
-    registerUser
+    registerUser,
+    loginUser
 }

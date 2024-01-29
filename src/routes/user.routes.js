@@ -19,4 +19,7 @@ router.route("/register").post(
     registerUser
 )
 
+//Login User
+router.route("/login").post(loginUser);
+
 export default router
