@@ -14,6 +14,9 @@ import {
     ApiResponse
 } from "../utils/ApiResponse.js";
 
+import jwt from "jsonwebtoken"
+import md5 from "md5"
+
 const registerUser = asyncHandler(async (req, res) => {
     const {
         fullName,
@@ -183,8 +186,62 @@ const logoutUser = asyncHandler(async (req, res) =>{
 
 })
 
+const refreshUserToken = asyncHandler(async (req, res) => {
+    //Access incoming token with headers/cookies
+    const rfToken = req.header("Authorization").replace("Bearer ", "")
+                    || req.cookies.refreshToken;
+
+    if (rfToken) {
+        throw new ApiError(401, "UnAuthorized request")
+    }
+
+    //Verify the incoming refresh token
+    try {
+        const decodedToken = jwt.verify(rfToken, process.env.REFRESH_TOKEN_SECRET);
+    
+        if (!decodedToken) {
+            throw new ApiError(401, "UnAuthorized Token")
+        }
+    
+        const saved_user = await User.findById(decodedToken._id);
+    
+        if (!saved_user) {
+            new ApiError(401, "UnAuthorized token")
+        }
+    
+        //Check: User stored refresh token and incoming refresh token (Using md5 Hash)
+        const incomingRTHash = md5(rfToken);
+        const userRTHash = md5(saved_user?.refreshToken)
+    
+        if (incomingRTHash !== userRTHash) {
+            new ApiError(401, "Refresh Token is expired or used")
+        }
+    
+        //Generate Access and Refresh Token and save user
+        const { accessToken, newRefreshToken } = await generateAccessAndRefreshTokens(saved_user._id); //Generate and save in user db
+    
+        //Return the accessToken and refreshToken
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        return res.status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newRefreshToken, options)
+        .json(
+            new ApiResponse(200, {accessToken, refreshToken: newRefreshToken}, "Access Token refresh successful")
+        )
+    } catch (error) {
+        console.log("refresh token error", error)
+        throw new ApiError(401, error?.message || "Invalid refresh token")
+    }
+
+})
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshUserToken
 }
