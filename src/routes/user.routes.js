@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword, updateAvatarOrCoverImage } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -32,5 +32,21 @@ router.route("/refresh-token").post(refreshUserToken)
 //Change User Password
 //Middleware added so that we can only allow to change only when user logs in
 router.route("/change-password").post(verifyToken, changeUserPassword); 
+
+//Update coverImage or avatar
+router.route("/update-image").post(
+    verifyToken,  //Allow to upload images only if logged in
+    upload.fields([
+        {
+            name: "avatar",
+            maxCount: 1
+        },
+        {
+            name: "coverImage",
+            maxCount: 1
+        }
+    ]),
+    updateAvatarOrCoverImage
+)
 
 export default router

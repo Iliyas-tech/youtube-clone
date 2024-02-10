@@ -270,10 +270,69 @@ const changeUserPassword = asyncHandler(async (req, res) => {
     )
 })
 
+//Updating Avatar or Cover Image
+const updateAvatarOrCoverImage = asyncHandler(async(req, res) =>{
+    const coverImageLocalPath = req?.files?.coverImage && req?.files?.coverImage[0]?.path;
+    const avatarLocalPath = req?.files?.avatar && req?.files?.avatar[0]?.path
+
+    if (!coverImageLocalPath && !avatarLocalPath) {
+        throw new ApiError(400, "Please provide image to upload")
+    }
+
+    //Throw error if both passed
+    if (coverImageLocalPath && avatarLocalPath) {
+        throw new ApiError(400, "Either cover image or avatar accepted")
+    }
+
+    //TODO: Delete the existing coverImage | avatar
+
+    let updatedUser = {}
+
+    if (avatarLocalPath) {
+        //Upload to cloudinary
+        const avatarRemoteObj = await uploadToCloudinary(avatarLocalPath)
+        if (avatarRemoteObj) {
+            //Update the updated url of avatar
+            updatedUser = await User.findByIdAndUpdate(
+                { _id: req.user?._id}, 
+                {
+                    $set: {
+                        avatar: avatarRemoteObj.url
+                    }
+                },
+                { new: true }
+            ).select("-password")
+        }
+    }
+
+    //For CoverImage
+    else {
+        //Upload to cloudinary
+        const coverImageRemoteObj = await uploadToCloudinary(coverImageLocalPath)
+        if (coverImageRemoteObj) {
+            //Update the updated url of coverImage
+            updatedUser = await User.findByIdAndUpdate(
+                { _id: req.user?._id}, 
+                {
+                    $set: {
+                        coverImage: coverImageRemoteObj.url
+                    }
+                },
+                { new: true }
+            ).select("-password")
+        }
+    }
+
+    return res.send(
+        new ApiResponse(200, updatedUser, "Image uploaded succesfully")
+    )
+})
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshUserToken,
-    changeUserPassword
+    changeUserPassword,
+    updateAvatarOrCoverImage
 }
