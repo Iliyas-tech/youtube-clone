@@ -265,7 +265,7 @@ const changeUserPassword = asyncHandler(async (req, res) => {
     userInfo.password = newPassword
     await userInfo.save({ validateBeforeSave: false })
 
-    return res.send(
+    return res.status(200).json(
         new ApiResponse(200, {}, "User password change successfully")
     )
 })
@@ -323,9 +323,8 @@ const updateAvatarOrCoverImage = asyncHandler(async(req, res) =>{
         }
     }
 
-    return res.send(
-        new ApiResponse(200, updatedUser, "Image uploaded succesfully")
-    )
+    return res.status(200)
+    .json(new ApiResponse(200, updatedUser, "Image updated succesfully"))
 })
 
 export {
