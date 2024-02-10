@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { registerUser, loginUser, logoutUser, refreshUserToken } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -28,5 +28,9 @@ router.route("/logout").post(verifyToken, logoutUser)
 
 //Refresh Token
 router.route("/refresh-token").post(refreshUserToken)
+
+//Change User Password
+//Middleware added so that we can only allow to change only when user logs in
+router.route("/change-password").post(verifyToken, changeUserPassword); 
 
 export default router

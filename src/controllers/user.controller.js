@@ -191,7 +191,7 @@ const refreshUserToken = asyncHandler(async (req, res) => {
     const rfToken = req.header("Authorization").replace("Bearer ", "")
                     || req.cookies.refreshToken;
 
-    if (rfToken) {
+    if (!rfToken) {
         throw new ApiError(401, "UnAuthorized request")
     }
 
@@ -239,9 +239,41 @@ const refreshUserToken = asyncHandler(async (req, res) => {
 
 })
 
+//Change password
+const changeUserPassword = asyncHandler(async (req, res) => {
+    //Get old and new passwords from request
+
+    const { oldPassword, newPassword} = req.body;
+
+    if (!oldPassword || !newPassword) {
+        throw new ApiError(400, "Old and new password required")
+    }
+
+    //Get user details which given by middlware
+    const userInfo = await User.findById(req.user?._id);
+
+    if (!userInfo) {
+        throw new ApiError(404, "User not found")
+    }
+
+    //Compare the passwords
+    const isPasswordMatch = await userInfo.isPasswordCorrect(oldPassword)
+    if (!isPasswordMatch) {
+        throw new ApiError(400, "Old Password is not correct")
+    }
+
+    userInfo.password = newPassword
+    await userInfo.save({ validateBeforeSave: false })
+
+    return res.send(
+        new ApiResponse(200, {}, "User password change successfully")
+    )
+})
+
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshUserToken
+    refreshUserToken,
+    changeUserPassword
 }
