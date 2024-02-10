@@ -327,11 +327,89 @@ const updateAvatarOrCoverImage = asyncHandler(async(req, res) =>{
     .json(new ApiResponse(200, updatedUser, "Image updated succesfully"))
 })
 
+//Get User Channel Profile details
+const getChannelProfileDetails = asyncHandler(async (req, res) =>{
+    const { username } = req?.params && req?.params?.username.trim();
+
+    if (!username) {
+        throw new ApiError(400, "User Profile required")
+    }
+
+    const channelDetails = await User.aggregate([
+        {
+            $match: {
+                username: username.toLowerCase()
+            },
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                let: { userId: "$_id" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {$eq: ["$$userId", "$channel"]}
+                        }
+                    },
+                    {
+                        $count: "totalCount"
+                    }
+                ],
+                as: "subscriptionCount"
+            }
+        },
+        {
+            $lookup: {
+                from: "subscriptions",
+                let: { userId: "$_id"},
+                pipeline: [
+                    {
+                        $expr: { $eq: ["$$userId", "$subscriber"]}
+                    },
+                    {
+                        $count: "totalCount"
+                    }
+                ],
+                as: "channelSubscribedToCount"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: { $arrayElemAt: ["$subscriptionCount.totalCount", 0]},
+                channelSubscriptionCount: { $arrayElemAt: ["channelSubscribedToCount.totalCount", 0]},
+                isSubscribed: {
+                    $in: ["$req.user?._id", "$subscribers.subscriber"]
+                }
+            }
+        },
+        {
+            $project: {
+                fullName: 1,
+                username: 1,
+                email: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscribersCount: 1,
+                channelSubscriptionCount: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+    if (!channelDetails || channelDetails.length === 0) {
+        throw new ApiError(404, "Channel not found")
+    }
+
+    return res.status(200)
+    .json(new ApiResponse(200, channelDetails[0], "User channel fetched succesfully"))
+ })
+
 export {
     registerUser,
     loginUser,
     logoutUser,
     refreshUserToken,
     changeUserPassword,
-    updateAvatarOrCoverImage
+    updateAvatarOrCoverImage,
+    getChannelProfileDetails
 }
