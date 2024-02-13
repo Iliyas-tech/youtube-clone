@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword, updateAvatarOrCoverImage, getChannelProfileDetails } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword, updateAvatarOrCoverImage, getChannelProfileDetails, getUserWatchHistory } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -34,7 +34,7 @@ router.route("/refresh-token").post(refreshUserToken)
 router.route("/change-password").post(verifyToken, changeUserPassword); 
 
 //Update coverImage or avatar
-router.route("/update-image").post(
+router.route("/update-image").patch(
     verifyToken,  //Allow to upload images only if logged in
     upload.fields([
         {
@@ -50,6 +50,9 @@ router.route("/update-image").post(
 )
 
 //Get User channel profile
-route.route("/get-channel-info").get(verifyToken, getChannelProfileDetails)
+router.route("/channel/:username").get(verifyToken, getChannelProfileDetails)
+
+//Get User Watch History
+router.route("/watch-history").get(verifyToken, getUserWatchHistory)
 
 export default router

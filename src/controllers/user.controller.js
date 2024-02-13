@@ -402,7 +402,54 @@ const getChannelProfileDetails = asyncHandler(async (req, res) =>{
 
     return res.status(200)
     .json(new ApiResponse(200, channelDetails[0], "User channel fetched succesfully"))
- })
+})
+
+const getUserWatchHistory = asyncHandler(async (req, res) =>{
+    const userWatchHistory = await User.aggregate([
+        {
+            $match: {
+                _id: req.user?._id
+            }
+        },
+        {
+            $lookup: {
+                from: 'videos',
+                localField: 'watchHistory',
+                foreignField: '_id',
+                as: 'userWatchHistory',
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "ownerDetails",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$ownerDetails"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res.status(200)
+    .json(new ApiResponse(200, userWatchHistory[0].watchHistory, "User watch history fetched succesfully"))
+})
 
 export {
     registerUser,
@@ -411,5 +458,6 @@ export {
     refreshUserToken,
     changeUserPassword,
     updateAvatarOrCoverImage,
-    getChannelProfileDetails
+    getChannelProfileDetails,
+    getUserWatchHistory
 }
