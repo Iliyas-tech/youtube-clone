@@ -55,6 +55,6 @@ router.route("/channel/:username").get(verifyToken, getChannelProfileDetails)
 //Get User Watch History
 router.route("/watch-history").get(verifyToken, getUserWatchHistory)
 
-route.route("/forgot-password:id").post(verifyToken, forgotPassword)
+router.route("/forgot-password/:id").post(forgotPassword)
 
 export default router
