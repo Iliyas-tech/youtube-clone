@@ -451,6 +451,20 @@ const getUserWatchHistory = asyncHandler(async (req, res) =>{
     .json(new ApiResponse(200, userWatchHistory[0].watchHistory, "User watch history fetched succesfully"))
 })
 
+const forgotPassword = asyncHandler(async(req,res) => {
+     //Get user details which given by middlware
+     const userInfo = await User.findById(req.user?._id);
+
+     if (!userInfo) {
+         throw new ApiError(404, "User not found")
+     }
+     userInfo.password = newPassword
+     await userInfo.save({ validateBeforeSave: false })
+ 
+     return res.status(200).json(
+         new ApiResponse(200, {}, "User password change successfully")
+     )
+})
 export {
     registerUser,
     loginUser,
@@ -459,5 +473,6 @@ export {
     changeUserPassword,
     updateAvatarOrCoverImage,
     getChannelProfileDetails,
-    getUserWatchHistory
+    getUserWatchHistory,
+    forgotPassword
 }

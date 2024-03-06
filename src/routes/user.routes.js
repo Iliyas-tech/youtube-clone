@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword, updateAvatarOrCoverImage, getChannelProfileDetails, getUserWatchHistory } from "../controllers/user.controller.js";
+import { registerUser, loginUser, logoutUser, refreshUserToken, changeUserPassword, updateAvatarOrCoverImage, getChannelProfileDetails, getUserWatchHistory, forgotPassword } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 
@@ -54,5 +54,7 @@ router.route("/channel/:username").get(verifyToken, getChannelProfileDetails)
 
 //Get User Watch History
 router.route("/watch-history").get(verifyToken, getUserWatchHistory)
+
+route.route("/forgot-password:id").post(verifyToken, forgotPassword)
 
 export default router
